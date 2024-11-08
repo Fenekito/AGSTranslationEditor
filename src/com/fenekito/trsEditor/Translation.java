@@ -95,6 +95,14 @@ public class Translation {
     public ArrayList<String> getTranslatedLines() {
         return translatedLines;
     }
+    
+    public void removeLast() {
+    	if (length > 0) {
+        	originalLines.remove(originalLines.size()-1);
+        	translatedLines.remove(translatedLines.size()-1);
+        	length--;
+    	}
+    }
 
     public void add(String original, String translation) throws Exception {
         if (original.isEmpty() || translation.isEmpty()) {

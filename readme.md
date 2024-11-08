@@ -13,3 +13,13 @@ I'm open to improving it to work better for others as long as I'm able to get pr
 
 To use the program just open the Jar file (or the executable if you downloaded the windows executable)
 It should display the following interface
+
+![Screenshot of initial opening of the program](https://i.imgur.com/WR9tZMp.png)
+
+From here you can choose to open an existing file or start adding text from scratch.
+![Screenshot of file dialog](https://i.imgur.com/A8snz8A.png)
+
+After finishing your work, you can press the save button to save all your work.
+The program will also automatically save you progress in the background every minute as a backup.
+The autosave file can be located in the same place as the program is located.
+![Screenshot of save dialog](https://i.imgur.com/PQjPlFZ.png)

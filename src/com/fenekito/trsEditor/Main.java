@@ -5,7 +5,10 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -34,27 +37,25 @@ public class Main {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout()); // Use BorderLayout for better placement
 
-        // Create a file chooser
         JFileChooser chooser = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter("AGS Translation Files", "trs");
         chooser.setFileFilter(filter);
 
         // Create a panel to hold the labels and text fields
         panel = new JPanel();
-        panel.setLayout(new GridLayout(0, 2, 5, 5)); // 2 columns, 5px horizontal & vertical gaps
+        panel.setLayout(new GridLayout(0, 2, 5, 5));
 
         // Add the panel to a JScrollPane
         pane = new JScrollPane(panel);
         pane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
         // Create a panel for the top row of labels ("Original Text" and "Translation")
-        JPanel headerPanel = new JPanel(new GridLayout(1, 2, 5, 5)); // 1 row, 2 columns
+        JPanel headerPanel = new JPanel(new GridLayout(1, 2, 5, 5));
         JLabel originalLabelHeader = new JLabel("Original Text", JLabel.CENTER);
         JLabel translatedLabelHeader = new JLabel("Translation", JLabel.CENTER);
         headerPanel.add(originalLabelHeader);
         headerPanel.add(translatedLabelHeader);
 
-        // Create the button to open the file chooser dialog
         JButton openFileButton = new JButton("Open File");
         openFileButton.addActionListener(new ActionListener() {
             @Override
@@ -141,14 +142,86 @@ public class Main {
             @Override
             public void actionPerformed(ActionEvent e) {
             	
-                JTextField newOriginalField = new JTextField("New Original");
-                newOriginalField.setPreferredSize(new Dimension(150, 40));
+                JTextField originalField = new JTextField("New Original Text");
+                originalField.setPreferredSize(new Dimension(150, 40));
 
-                JTextField newTranslatedField = new JTextField("New Translated");
-                newTranslatedField.setPreferredSize(new Dimension(150, 40));
+                JTextField translatedField = new JTextField("New Translated Text");
+                translatedField.setPreferredSize(new Dimension(150, 40));
 
-                panel.add(newOriginalField);
-                panel.add(newTranslatedField);
+                panel.add(originalField);
+                panel.add(translatedField);
+                
+                if (translation == null) {
+                    /*We didn't load any file so there's no translation already in place
+                     * So we're creating a new one.
+                     */
+                    if (translation == null) {
+                    	translation = new Translation();
+                    	//Increment the index by 2 to only go from original line to original line
+                    	try {
+                    		for(int i = 0; i < panel.getComponentCount(); i+=2) {
+                        		translation.add(originalField.getText(), translatedField.getText());
+                        	}	
+                    	} catch (Exception ee) {
+                    		JOptionPane.showMessageDialog(null, ee.getMessage() ,"Error", JOptionPane.ERROR_MESSAGE);
+                    	}
+                    }
+            	}
+                
+                /*
+                 * The code below is needed to correctly add and dynamically update the translation
+                 * In case we have opened a file and are adding new lines.
+                 */
+                
+                final int index = translation.getOriginalLines().size() - 1;
+
+                originalField.getDocument().addDocumentListener(new DocumentListener() {
+                    @Override
+                    public void insertUpdate(DocumentEvent e) {
+                        updateOriginalLine();
+                    }
+
+                    @Override
+                    public void removeUpdate(DocumentEvent e) {
+                        updateOriginalLine();
+                    }
+
+                    @Override
+                    public void changedUpdate(DocumentEvent e) {
+                        updateOriginalLine();
+                    }
+
+                    private void updateOriginalLine() {
+                        translation.getOriginalLines().set(index, originalField.getText());
+                    }
+                });
+
+                translatedField.getDocument().addDocumentListener(new DocumentListener() {
+                    @Override
+                    public void insertUpdate(DocumentEvent e) {
+                        updateTranslatedLine();
+                    }
+
+                    @Override
+                    public void removeUpdate(DocumentEvent e) {
+                        updateTranslatedLine();
+                    }
+
+                    @Override
+                    public void changedUpdate(DocumentEvent e) {
+                        updateTranslatedLine();
+                    }
+
+                    private void updateTranslatedLine() {
+                        translation.getTranslatedLines().set(index, translatedField.getText());
+                    }
+                });
+                
+                try {
+					translation.add(originalField.getText(),translatedField.getText());
+				} catch (Exception ee) {
+					ee.printStackTrace();
+				}
 
                 panel.revalidate();
                 panel.repaint();
@@ -165,6 +238,8 @@ public class Main {
                 	
                     panel.remove(componentCount - 1);
                     panel.remove(componentCount - 2);
+                    
+                    translation.removeLast();
 
                     panel.revalidate();
                     panel.repaint();
@@ -183,22 +258,6 @@ public class Main {
                     JOptionPane.showMessageDialog(saveFileButton, "No Text available to save!", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                
-                /*We didn't load any file so there's no translation already in place
-                 * So we're creating a new one.
-                 */
-                if (translation == null) {
-                	translation = new Translation();
-                	//Increment the index by 2 to only go from original line to original line
-                	try {
-                		for(int i = 0; i < panel.getComponentCount(); i+=2) {
-                    		translation.add(((JTextField)panel.getComponent(i)).getText(), 
-                    				((JTextField)panel.getComponent(i+1)).getText());
-                    	}	
-                	} catch (Exception ee) {
-                		JOptionPane.showMessageDialog(saveFileButton, ee.getMessage() ,"Error", JOptionPane.ERROR_MESSAGE);
-                	}
-                }
 
                 JFileChooser folderChooser = new JFileChooser();
                 folderChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -209,7 +268,6 @@ public class Main {
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     String selectedFolderPath = folderChooser.getSelectedFile().getAbsolutePath();
                     try {
-                        // Call the saveFile method from the Translation class
                         translation.saveFile(selectedFolderPath);
 
                         JOptionPane.showMessageDialog(saveFileButton, "File saved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -220,19 +278,39 @@ public class Main {
             }
         });
 
-        // Add the buttons at the top of the frame
-        JPanel buttonPanel = new JPanel(); // Panel to hold both buttons
+        JPanel buttonPanel = new JPanel();
         buttonPanel.add(openFileButton);
         buttonPanel.add(addTextButton);
         buttonPanel.add(removeTextButton);
         buttonPanel.add(saveFileButton);
 
-        // Add the header panel above the scrollable panel
         frame.add(headerPanel, BorderLayout.NORTH);
-        frame.add(buttonPanel, BorderLayout.SOUTH); // Place buttons at the bottom
-        frame.add(pane, BorderLayout.CENTER); // Add scrollable panel to the center
+        frame.add(buttonPanel, BorderLayout.SOUTH);
+        frame.add(pane, BorderLayout.CENTER);
 
-        // Set the frame to be visible
+        startAutoSave();
         frame.setVisible(true);
+    }
+    
+    public static void startAutoSave() {
+        Timer timer = new Timer(true);
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (translation != null) {
+                    String currentDirectory = System.getProperty("user.dir");
+                    String autosaveFilePath = currentDirectory + File.separator + "autosave.trs";
+                    try {
+                        translation.saveFile(autosaveFilePath);
+                    } catch (IOException e) {
+                        System.err.println("Autosave failed: " + e.getMessage());
+                        JOptionPane.showMessageDialog(null, 
+                        		"Autosave Failed, Check if the current folder has write permissions", 
+                        		"Error",
+                        		JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        }, 0, 60 * 1000);
     }
 }
