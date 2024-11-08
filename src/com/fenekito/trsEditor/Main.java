@@ -155,6 +155,25 @@ public class Main {
             }
         });
         
+        JButton removeTextButton = new JButton("Remove Last Line");
+        removeTextButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int componentCount = panel.getComponentCount();
+                
+                if (componentCount >= 2) {
+                	
+                    panel.remove(componentCount - 1);
+                    panel.remove(componentCount - 2);
+
+                    panel.revalidate();
+                    panel.repaint();
+                } else {
+                    JOptionPane.showMessageDialog(removeTextButton, "No lines left to remove!", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        
         JButton saveFileButton = new JButton("Save File");
         saveFileButton.addActionListener(new ActionListener() {
             @Override
@@ -205,6 +224,7 @@ public class Main {
         JPanel buttonPanel = new JPanel(); // Panel to hold both buttons
         buttonPanel.add(openFileButton);
         buttonPanel.add(addTextButton);
+        buttonPanel.add(removeTextButton);
         buttonPanel.add(saveFileButton);
 
         // Add the header panel above the scrollable panel
